@@ -2,6 +2,12 @@
 
 NOIP为主，研究研究题目。
 
+## 进度
+
+### NOI
+
+- [9272 偶数个三](https://github.com/bajdcc/ACM/blob/master/noi/9272/偶数个三.md)
+
 ## 主要内容
 
 - 高级数据结构相关实现及注解

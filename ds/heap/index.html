@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Visualizing min-heap algorithms with D3.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Ben Frederickson">
+    <link rel="canonical" href="http://www.benfrederickson.com/heap-visualization/" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link href="http://static.benfrederickson.com.s3-website-us-east-1.amazonaws.com/bootstrap-3.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+
+<script src="heap-vis.js"></script>
+
+
+
+
+<div class="svgcheck well"><h5>Note: you need Javascript enabled and a SVG compatible browser to
+view the diagrams here!</h5><p>Its looking like you're missing javascript, or
+are running an old web browser that doesn't support SVG. If no diagrams show
+up then you might want to consider loading this up in a different browser.
+I've tested this with Chrome, Safari and Firefox only.</div>
+
+
+<script>
+function hasSVG() {
+    return document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure",
+    "1.1");
+}
+if (hasSVG()) {
+    d3.select(".svgcheck").attr("style", "display:none");
+}
+</script>
+
+
+
+<div class="container">
+    <div class = "row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+	
+	<br><h3 class="red-text text-center" onclick="javascript:location.href='http://www.benfrederickson.com/heap-visualization/'" style="text-center">heap-visualization</h3><br>
+<div class="heap">
+
+<div class="heap-viz"></div>
+<table class="centered-block" style="margin-left: auto !important; margin-right: auto !important;">
+<tr><td><div>
+<div class="btn-group">
+  <button type="button" class="btn btn-default pause-button">
+  <span class="glyphicon glyphicon-pause"></span>
+  <span class="glyphicon glyphicon-play" style="display:none"></span>
+  <span class="pause-label"> Pause</span></button>
+  <button type="button" class="btn btn-default restart-button"><span class="glyphicon glyphicon-repeat"></span> Restart</button>
+
+<div class="btn-group">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    Heap Size <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li><a class="heap1">1</a></li>
+    <li><a class="heap3">3</a></li>
+    <li><a class="heap7">7</a></li>
+    <li><a class="heap15">15</a></li>
+    <li><a class="heap31">31</a></li>
+  </ul>
+</div>
+<div class="btn-group">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    Speed <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li><a class="speed1">slow</a></li>
+    <li><a class="speed2">normal</a></li>
+    <li><a class="speed3">fast</a></li>
+    <li><a class="speed4">ludicrous</a></li>
+  </ul>
+</div>
+</div>
+
+</div></td></tr></table>
+</div></div></div></div>
+<script>
+createHeapVis(d3.select(".heap"));
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="http://static.benfrederickson.com.s3-website-us-east-1.amazonaws.com/google-code-prettify/prettify.js"></script>
+    <script src="http://static.benfrederickson.com.s3-website-us-east-1.amazonaws.com/bootstrap-3.0.0/js/bootstrap.min.js"></script>
+
+  </body>
+</html>

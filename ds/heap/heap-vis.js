@@ -1,27 +1,20 @@
-function reheap(heap, compare, swap) {
-    var parent = 0, end = heap.length, child = 1;
+function reheap(heap, compare, swap, cur) {
     compare = compare || function(a,b) { return a < b; };
     swap = swap || function(a,b) { };
+    var child = cur;
 
     // recurse down the minheap, swapping entries as needed to
     // keep the heap property
-    while (child < end) {
-        // get the index of the smallest child node
-        var right = child + 1;
-        if ((right < end) && (compare(heap[right], heap[child]))) {
-            child = right;
-        }
-    
-        // if the parent is less than both children, we're done here
-        if (compare(heap[parent], heap[child])) break;
-           
-        // otherwise swap, and restore heap property on child node
-        var temp = heap[child];
-        heap[child] = heap[parent];
-        heap[parent] = temp;
-        swap(parent, child);
-        parent = child;
-        child = 2 * parent + 1;
+    // 最小堆
+    while (child > 0) {
+        var parent = (child - 1) >> 1;
+        if (compare(heap[child], heap[parent])) {
+            var temp = heap[child];
+            heap[child] = heap[parent];
+            heap[parent] = temp;
+            swap(parent, child);
+            child = parent;
+        } else break;
     }
 }
 
@@ -40,6 +33,8 @@ function getTreePositions(levels, pos, spacing) {
             var i = items + offset - 1;
             ret[i] = {x: x + offset * interval, y: y};
             ret[i].parent = i ? Math.floor((i - 1)/2) : i;
+            ret[i].id = i;
+            ret[i].inHeap = true;
         }
     }
 
@@ -47,23 +42,21 @@ function getTreePositions(levels, pos, spacing) {
 };
 
 function createHeapVis(element) {
-    console.log("creating");
     var colours = d3.scale.linear().domain([0, 100]).range(["#1f77b4", "#ff7f0e"]);
-    var current, count, pending, heap, items, points = [], paused= false, levels=3, speed=800;
+    var current, count, pending, heap, items, node_max, tree_nodes, points = [], paused= false, levels=4, speed=800;
 
     function resetState() {
-        var pointSize = 33;
-        radius = function(p) { return Math.sqrt(p.value) + 6; }
+        var pointSize = 60;
+        radius = function(p) { return Math.sqrt(p.value) + 12; }
 
         // if running on a phone, make things a little smaller
         if (document.documentElement.clientWidth < 1024) {
             radius = function(p) { return Math.sqrt(p.value)/2 + 7; };
             pointSize = 25;
-            element.selectAll(".heap31").attr("style", "display:none");
         }
 
-        var w = Math.min(848, document.documentElement.clientWidth-30),
-            h = pointSize * (levels + 1);
+        var w = $("#title").width(),
+            h = pointSize * (levels + 1) + 20;
 
         var svg = element.select(".heap-viz").append("svg");
         svg.attr("width", w)
@@ -71,34 +64,30 @@ function createHeapVis(element) {
 
         svg.append("rect")
             .attr("width", pointSize)
-            .attr("height", pointSize*2)
+            .attr("height", pointSize)
             .attr("x", (w-pointSize)/2)
+            .attr("y", h-pointSize)
             .attr("fill", "#F9F9F9")
             .attr("stroke", "#CCC")
-            .attr("stroke-width", 1)
-            .attr("y", 0);
+            .attr("stroke-width", 1);
 
         current = -3;
-        count = 128;
         pending = [];
+        node_max = (1 << levels) - 1;
+        count = node_max;
+        tree_nodes = 0;
         heap  = getTreePositions(levels, 
-                                 {x:w/2, y: 1.5 * pointSize},
+                                 {x:w/2, y: pointSize/2},
                                  {x:1.5 * pointSize, y:pointSize});
         items = [];
 
+        // 上面的队列
         for (var i = 0; i < count; ++i) {
-            var p = {x:w/2 - 50 * (i - current),y:pointSize/2};
+            var p = {x:w/2 - 60 * (i - current),y:h - pointSize/2};
             p.value = Math.ceil((99 * Math.random()));
             p.colour = colours(p.value);
             p.inHeap = false;
             items.push(p);
-        }
-
-        for (var i = 0; i < heap.length; ++i) {
-            heap[i].value = 0;
-            heap[i].inHeap = true;
-            heap[i].colour = colours(0);
-            items.push(heap[i]);
         }
 
         lines = svg.selectAll("line")
@@ -106,13 +95,17 @@ function createHeapVis(element) {
             .enter()
             .append("line");
         
+        // 树上的枝
         lines.attr("x1", function(d) { return d.x; })
             .attr("y1", function(d) { return d.y; })
             .attr("x2", function(d) { return heap[d.parent].x;})
             .attr("y2", function(d) { return heap[d.parent].y;})
             .attr("stroke", "#CCC")
             .attr("stroke-width", 2)
+            .attr("id", function(d) { return "line" + d.id;})
+            .style("opacity", 0)
 
+        // 结点
         points = svg.selectAll("points")
             .data(items)
             .enter()
@@ -120,12 +113,14 @@ function createHeapVis(element) {
             .style("stroke", function(d) { return d.colour; })
             .style("fill", function(d) { return d.colour; })
 
+        // 背景色
         background = points.append("circle")
               .attr("cx", function(d) { return d.x; })
               .attr("cy", function(d) { return d.y; })
               .attr("r", radius)
               .attr("fill", "white");
 
+        // 圆环
         circle = points.append("circle")
               .attr("cx", function(d) { return d.x; })
               .attr("cy", function(d) { return d.y; })
@@ -133,6 +128,7 @@ function createHeapVis(element) {
               .attr("fill-opacity", .2)
               .attr("stroke-width",  1);
 
+        // 数字
         text = points.append("text")
             .attr("text-anchor", "middle")
             .attr("x", function(d) { return d.x; })
@@ -141,14 +137,13 @@ function createHeapVis(element) {
             .style("font-weight", 200)
             .text(function(d) { return d.value; });
 
-        increment();
+        increment(); // 开始操作
     };
 
     function increment() {
         var duration = speed;
         if (paused) {
-            duration = 50;
-
+            duration = 50; // 等待时间
         } else if (pending.length) {
             // have items that need their positions swapped, do that
             duration /= 2;
@@ -167,18 +162,19 @@ function createHeapVis(element) {
             toSwap[0].inHeap = toSwap[1].inHeap;
             toSwap[1].inHeap = temp;
         } else {
-
             // just move all items 50px to the right, and 
             // call the 'reheap' item on the heap of current item
+            // 所有队列中的数据向右移动
             for (var i = 0; i < items.length; ++i) {
                 if (!items[i].inHeap) {
-                    items[i].x += 50;
+                    items[i].x += 60;
                 }
             }
-            current += 1; 
-            if ((current >= 0) && (current < count) && (items[current].value > heap[0].value)) {
-                pending.push([items[current], heap[0]]);
-                heap[0] = items[current];
+            current += 1; // 添加一个数据
+            if ((current >= 0) && (current < count) && tree_nodes < node_max) {
+                pending.push([items[current], heap[tree_nodes]]);
+                heap[tree_nodes] = items[current];
+                heap[tree_nodes].show = true;
 
                 function swap(a,b) {
                     pending.push([heap[a], heap[b]]);
@@ -188,7 +184,8 @@ function createHeapVis(element) {
                     return a.value < b.value;
                 }
 
-                reheap(heap, compare, swap);
+                reheap(heap, compare, swap, tree_nodes);
+                tree_nodes++;
             }
         }
 
@@ -197,26 +194,32 @@ function createHeapVis(element) {
 
         // move things. todo: figure out a way to transition just the group
         // and not have to transition each element
+        // 添加过渡效果，结点移动动画
         circle.transition()
             .duration(duration)
             .attr("cx", function(d,i) { return d.x; })
             .attr("cy", function(d,i) { return d.y; })
-            .ease("linear");
+            .ease("ease");
 
         background.transition()
             .duration(duration)
             .attr("cx", function(d,i) { return d.x; })
             .attr("cy", function(d,i) { return d.y; })
-            .ease("linear");
+            .ease("ease");
 
         text.transition()
             .duration(duration)
             .attr("x", function(d,i) { return d.x; })
             .attr("y", function (d) { return d.y + 4; })
-            .ease("linear");
+            .ease("ease");
+
+        lines.transition()
+            .duration(duration)
+            .style("opacity", function(d) { return d.id < tree_nodes ? 1 : 0;})
+            .ease("ease");
 
         if (current < count + 10) {
-            transition.each("end", increment);
+            transition.each("end", increment); // 添加下个数据
         }
 
         if (current >= count) {
@@ -224,18 +227,18 @@ function createHeapVis(element) {
         }
     };
 
-    resetState();
+    resetState(); // 重置状态
 
     function pause() {
         paused = true;
-        element.select(".pause-label").text(" Resume");
+        element.select(".pause-label").text(" 继续");
         element.select(".glyphicon-pause").attr("style", "display:none");
         element.select(".glyphicon-play").attr("style", "display:inline");
     }
 
     function resume() {
         paused = false;
-        element.select(".pause-label").text(" Pause");
+        element.select(".pause-label").text(" 暂停");
         element.select(".glyphicon-pause").attr("style", "display:inline");
         element.select(".glyphicon-play").attr("style", "display:none");
     }
@@ -254,19 +257,8 @@ function createHeapVis(element) {
         resume();
     }
 
-    function setHeapSize(level) {
-        levels = level;
-        restart();
-    }
-
     element.select(".restart-button").on("click", restart);
     element.select(".pause-button").on("click",  togglePause);
-
-    element.select(".heap1").on("click", function() { setHeapSize(1); });
-    element.select(".heap3").on("click", function() { setHeapSize(2); });
-    element.select(".heap7").on("click", function() { setHeapSize(3); });
-    element.select(".heap15").on("click", function() { setHeapSize(4); });
-    element.select(".heap31").on("click", function() { setHeapSize(5); });
 
     element.select(".speed1").on("click", function() { speed = 1600; });
     element.select(".speed2").on("click", function() { speed = 800; });
